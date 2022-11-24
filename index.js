@@ -45,6 +45,7 @@ run();
 
 
 const usersCollection = client.db('swaplaptop').collection('users');
+const productsCollection = client.db('swaplaptop').collection('products');
 
 
 
@@ -163,7 +164,27 @@ app.get('/admin', async(req,res)=>{
         message: error.message
       })
   }
-})
+});
+
+// category data load by product category name
+app.get('/category/:id', async (req,res) =>{
+  try {
+    const id = req.params.id;
+    console.log(id)
+    const query = {category: id};
+    const result = await productsCollection.find(query).toArray();
+    res.send({
+      success: true,
+      data: result
+    })
+    
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+      })
+  }
+});
 
 
 app.get('/', async (req, res) => {

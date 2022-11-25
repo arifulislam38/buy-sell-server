@@ -234,6 +234,31 @@ app.post('/wishlist', async(req,res)=>{
 });
 
 
+
+// add product to the reportlist
+app.post('/report', async(req,res)=>{
+ try {
+    const id = req.query.id;
+    const email = req.query.email;
+    const query = {_id: ObjectId(id)}
+    const product = await productsCollection.findOne(query);
+    product.report = email;
+
+    const result = await wishCollection.insertOne(product);
+
+  res.send({
+    success: true,
+    data: result
+  });
+ } catch (error) {
+  res.send({
+        success: false,
+        message: error.message
+      })
+ }
+});
+
+
 app.get('/', async (req, res) => {
     res.send('Assignment 12 server is running');
 })

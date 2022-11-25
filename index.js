@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 // const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -46,6 +46,8 @@ run();
 
 const usersCollection = client.db('swaplaptop').collection('users');
 const productsCollection = client.db('swaplaptop').collection('products');
+const wishCollection = client.db('swaplaptop').collection('wishlist');
+const reportCollection = client.db('swaplaptop').collection('reportedProduct');
 
 
 
@@ -117,6 +119,24 @@ const verifyAdmin = async (req, res, next) => {
 //             }
 //         });
 
+//create jwt for user
+app.post('/jwt', (req, res) =>{
+            try {
+                const user = req.body;
+                const token = jwt.sign(user,process.env.JWT_SECRET,{expiresIn:'12h'});
+                res.send({
+                    token,
+                    success: true,
+                    message: 'successfully got the token'
+                });
+            } catch (error) {
+               res.send({
+                 success: false,
+                 message: error.message
+               })
+            }
+        });
+
 
 //  create user and give token to the client side
 app.put('/createuser', async(req,res) =>{
@@ -126,8 +146,11 @@ app.put('/createuser', async(req,res) =>{
       const query = {user: user.email};
       const update = {
         $set:{
-          user: user.email,
-          role: user.role
+          name: user.name,
+          type: user.type,
+          image: user.image,
+          role: user.role,
+          verified: false
         }
       };
       const options = { upsert: true };
@@ -170,7 +193,6 @@ app.get('/admin', async(req,res)=>{
 app.get('/category/:id', async (req,res) =>{
   try {
     const id = req.params.id;
-    console.log(id)
     const query = {category: id};
     const result = await productsCollection.find(query).toArray();
     res.send({
@@ -184,6 +206,31 @@ app.get('/category/:id', async (req,res) =>{
         message: error.message
       })
   }
+});
+
+
+
+// add product to the wishlist
+app.post('/wishlist', async(req,res)=>{
+ try {
+    const id = req.query.id;
+    const email = req.query.email;
+    const query = {_id: ObjectId(id)}
+    const product = await productsCollection.findOne(query);
+    product.wish = email;
+
+    const result = await wishCollection.insertOne(product);
+
+  res.send({
+    success: true,
+    data: result
+  });
+ } catch (error) {
+  res.send({
+        success: false,
+        message: error.message
+      })
+ }
 });
 
 

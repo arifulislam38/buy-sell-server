@@ -258,9 +258,11 @@ app.post('/report', async(req,res)=>{
  }
 });
 
+// all users data send to the client side
 app.get('/allusers', async(req,res)=>{
   try {
     const result = await usersCollection.find({}).toArray();
+    console.log(result)
     res.send({
       success: true,
       data: result
@@ -271,7 +273,26 @@ app.get('/allusers', async(req,res)=>{
         message: error.message
     })
   }
-})
+});
+
+
+// all sellers data send to the client side
+app.get('/allsellers', async(req,res)=>{
+  try {
+    const result = await usersCollection.find({}).toArray();
+    const sellers = result.filter(data=> data.type === 'Seller');
+    res.send({
+      success: true,
+      data: sellers
+    })
+    
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
 
 
 app.get('/', async (req, res) => {

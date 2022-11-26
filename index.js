@@ -244,7 +244,7 @@ app.post('/report', async(req,res)=>{
     const product = await productsCollection.findOne(query);
     product.report = email;
 
-    const result = await wishCollection.insertOne(product);
+    const result = await reportCollection.insertOne(product);
 
   res.send({
     success: true,
@@ -257,6 +257,21 @@ app.post('/report', async(req,res)=>{
       })
  }
 });
+
+app.get('/allusers', async(req,res)=>{
+  try {
+    const result = await usersCollection.find({}).toArray();
+    res.send({
+      success: true,
+      data: result
+    })
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+})
 
 
 app.get('/', async (req, res) => {

@@ -295,6 +295,25 @@ app.get('/allsellers', async(req,res)=>{
 });
 
 
+// all buyers ger api
+app.get('/allbuyers', async(req,res)=>{
+  try {
+    const result = await usersCollection.find({}).toArray();
+    const buyers = result.filter(data=> data.type === 'Buyer');
+    res.send({
+      success: true,
+      data: buyers
+    })
+    
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+
 app.get('/', async (req, res) => {
     res.send('Assignment 12 server is running');
 })

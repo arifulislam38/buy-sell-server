@@ -262,10 +262,10 @@ app.post('/report', async(req,res)=>{
 app.get('/allusers', async(req,res)=>{
   try {
     const result = await usersCollection.find({}).toArray();
-    console.log(result)
+    const users = result.filter(user=> user.role !== "admin");
     res.send({
       success: true,
-      data: result
+      data: users
     })
   } catch (error) {
     res.send({
@@ -295,14 +295,74 @@ app.get('/allsellers', async(req,res)=>{
 });
 
 
+
+app.post('/allsellers', async(req,res)=>{
+  try {
+    const id = req.query.id;
+    const query = {_id: ObjectId(id)};
+
+    const result = await usersCollection.deleteOne(query);
+    res.send({
+      success: true,
+      data: result
+    })
+    
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+
 // all buyers ger api
 app.get('/allbuyers', async(req,res)=>{
   try {
     const result = await usersCollection.find({}).toArray();
-    const buyers = result.filter(data=> data.type === 'Buyer');
+    const buyers = result.filter(data=> data.type === 'buyer' && data.role !== 'admin');
     res.send({
       success: true,
       data: buyers
+    })
+    
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+// get the orders for a user 
+app.get('/myorders', async(req,res)=>{
+  try {
+    const email = req.query.email;
+    const query = {wish: email};
+    const result = await wishCollection.find(query).toArray();
+    res.send({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+
+
+app.post('/myorders', async(req,res)=>{
+  try {
+    const id = req.query.id;
+    const query = {_id: ObjectId(id)};
+
+    const result = await wishCollection.deleteOne(query);
+    res.send({
+      success: true,
+      data: result
     })
     
   } catch (error) {

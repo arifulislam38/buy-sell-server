@@ -374,6 +374,26 @@ app.post('/myorders', async(req,res)=>{
 });
 
 
+// my products data loaded through this api
+
+app.get('/myproducts', async(req,res)=>{
+  try {
+    const id = req.query.id;
+    const query = {seller: id}
+    const result = await productsCollection.find(query).toArray();
+    res.send({
+      success: true,
+      data: result
+    })
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+})
+
+
 app.get('/', async (req, res) => {
     res.send('Assignment 12 server is running');
 })

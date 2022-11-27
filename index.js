@@ -432,6 +432,26 @@ app.patch('/advertise', async(req,res)=>{
 });
 
 
+// add product to the product collection by seller
+
+app.post('/addproduct', async(req,res)=>{
+  try {
+      const product = req.body;
+      console.log(product)
+      const result = await productsCollection.insertOne(product);
+      res.send({
+        success: true,
+        data: result
+      })
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+
 app.get('/', async (req, res) => {
     res.send('Assignment 12 server is running');
 })

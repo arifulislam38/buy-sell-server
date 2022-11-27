@@ -48,6 +48,7 @@ const usersCollection = client.db('swaplaptop').collection('users');
 const productsCollection = client.db('swaplaptop').collection('products');
 const wishCollection = client.db('swaplaptop').collection('wishlist');
 const reportCollection = client.db('swaplaptop').collection('reportedProduct');
+const advertiseCollection = client.db('swaplaptop').collection('advertise');
 
 
 
@@ -391,7 +392,44 @@ app.get('/myproducts', async(req,res)=>{
         message: error.message
     })
   }
-})
+});
+
+
+// advertise data pushted to the advertise collection
+
+app.patch('/advertise', async(req,res)=>{
+  try {
+    const id = req.query.id;
+    const query = {_id: ObjectId(id)};
+    const product = await productsCollection.findOne(query);
+    const {name, description, image, category,location, originalPrice, resellPrice, duration, seller, time} = product;
+    const options = {upsert:true};
+    const update = {
+      $set:{
+        name, 
+        description, 
+        image, category,
+        location, 
+        originalPrice, 
+        resellPrice, 
+        duration, 
+        advertise: seller, 
+        time
+      }
+    };
+    const result = await advertiseCollection.updateOne(query,update,options);
+    res.send({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
 
 
 app.get('/', async (req, res) => {

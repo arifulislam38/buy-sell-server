@@ -49,6 +49,7 @@ const productsCollection = client.db('swaplaptop').collection('products');
 const wishCollection = client.db('swaplaptop').collection('wishlist');
 const reportCollection = client.db('swaplaptop').collection('reportedProduct');
 const advertiseCollection = client.db('swaplaptop').collection('advertise');
+const ordersCollection = client.db('swaplaptop').collection('orders');
 
 
 
@@ -195,7 +196,8 @@ app.get('/category/:id', async (req,res) =>{
   try {
     const id = req.params.id;
     const query = {category: id};
-    const result = await productsCollection.find(query).toArray();
+    const products = await productsCollection.find(query).toArray();
+    const result = products.filter(product=> product.status !== 'sold');
     res.send({
       success: true,
       data: result
@@ -339,8 +341,8 @@ app.get('/allbuyers', async(req,res)=>{
 app.get('/myorders', async(req,res)=>{
   try {
     const email = req.query.email;
-    const query = {wish: email};
-    const result = await wishCollection.find(query).toArray();
+    const query = {buyer: email};
+    const result = await ordersCollection.find(query).toArray();
     res.send({
       success: true,
       data: result
@@ -360,11 +362,14 @@ app.post('/myorders', async(req,res)=>{
     const id = req.query.id;
     const query = {_id: ObjectId(id)};
 
-    const result = await wishCollection.deleteOne(query);
-    res.send({
-      success: true,
-      data: result
-    })
+    const result = await ordersCollection.deleteOne(query);
+      if(result.deletedCount === 1){
+        res.send({
+        success: true,
+        data: result
+      })
+    }
+    
     
   } catch (error) {
     res.send({
@@ -432,6 +437,27 @@ app.patch('/advertise', async(req,res)=>{
 });
 
 
+//Delete the product by user
+
+app.post('/advertise', async(req,res)=>{
+  try {
+    const id = req.query.id;
+    const query = {_id: ObjectId(id)};
+    const result = await productsCollection.deleteOne(query);
+    res.send({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+
 // add product to the product collection by seller
 
 app.post('/addproduct', async(req,res)=>{
@@ -450,6 +476,43 @@ app.post('/addproduct', async(req,res)=>{
     })
   }
 });
+
+
+
+// handle order by modal
+
+app.post('/order', async(req,res)=>{
+  try {
+    const id = req.query.id;
+    const email = req.query.email;
+    const product = req.body;
+    const data = await productsCollection.findOne({_id:ObjectId(id)});
+    data.buyer = email;
+    const {name, description, image, category,location, originalPrice, resellPrice, duration, seller,buyer, time} = data;
+    const pdata = {
+      name,
+      description,
+      image,
+      category,
+      location,originalPrice,
+      resellPrice,
+      duration,
+      seller,
+      buyer,time,
+      ...product
+    }
+    const result = await ordersCollection.insertOne(pdata)
+    res.send({
+      success: true,
+      data: result
+    })
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+})
 
 
 app.get('/', async (req, res) => {

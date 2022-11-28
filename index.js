@@ -65,7 +65,7 @@ function verifyJWT(req, res, next) {
 
     const token = authHeader.split(' ')[1];
 
-    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+    jwt.verify(token, process.env.JWT_SECRET, function (err, decoded) {
         if (err) {
             return res.status(403).send({ message: 'forbidden access' })
         }
@@ -76,50 +76,6 @@ function verifyJWT(req, res, next) {
 };
 
 
-const verifyAdmin = async (req, res, next) => {
-            const decodedEmail = req.decoded.email;
-            const query = { email: decodedEmail };
-            const user = await usersCollection.findOne(query);
-
-            if (user?.role !== 'admin') {
-                return res.status(403).send({ message: 'forbidden access' })
-            }
-            next();
-};
-
-
-
-// .projects({item:1}) require value:1 that means it gives the inpute value;
-
-// app.get('/jwt', async (req, res) => {
-//             const email = req.query.email;
-//             const query = { email: email };
-//             const user = await usersCollection.findOne(query);
-//             if (user) {
-//                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
-//                 return res.send({ accessToken: token });
-//             }
-//             res.status(403).send({ accessToken: '' })
-// });
-
-
-
-// app.post('/jwt', (req, res) =>{
-//             try {
-//                 const user = req.body;
-//                 const token = jwt.sign(user,process.env.JWT_secret,{expiresIn:'1h'});
-//                 res.send({
-//                     token,
-//                     success: true,
-//                     message: 'successfully got the token'
-//                 });
-//             } catch (error) {
-//                res.send({
-//                  success: false,
-//                  message: error.message
-//                })
-//             }
-//         });
 
 //create jwt for user
 app.post('/jwt', (req, res) =>{
@@ -214,10 +170,14 @@ app.get('/category/:id', async (req,res) =>{
 
 
 // add product to the wishlist
-app.post('/wishlist', async(req,res)=>{
+app.post('/wishlist',verifyJWT, async(req,res)=>{
  try {
     const id = req.query.id;
     const email = req.query.email;
+    const decoded = req.decoded;
+            if(decoded.email !== email){
+                return res.status(403).send({message: 'unauthorized access'})
+            }
     const query = {_id: ObjectId(id)}
     const product = await productsCollection.findOne(query);
     product.wish = email;
@@ -239,10 +199,14 @@ app.post('/wishlist', async(req,res)=>{
 
 
 // add product to the reportlist
-app.post('/report', async(req,res)=>{
+app.post('/report',verifyJWT, async(req,res)=>{
  try {
     const id = req.query.id;
     const email = req.query.email;
+     const decoded = req.decoded;
+            if(decoded.email !== email){
+                return res.status(403).send({message: 'unauthorized access'})
+            }
     const query = {_id: ObjectId(id)}
     const product = await productsCollection.findOne(query);
     product.report = email;
@@ -261,8 +225,42 @@ app.post('/report', async(req,res)=>{
  }
 });
 
+
+app.get('/report',verifyJWT, async(req,res)=>{
+  try {
+    const result = await reportCollection.find({}).toArray();
+    res.send({
+      success: true,
+      data: result
+    })
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+
+app.post('/deletereport',verifyJWT, async(req,res)=>{
+  try {
+    const id = req.query.id;
+    const query = {_id: ObjectId(id)};
+    const result = await reportCollection.deleteOne(query);
+    res.send({
+      success: true,
+      data: result
+    })
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
 // all users data send to the client side
-app.get('/allusers', async(req,res)=>{
+app.get('/allusers',verifyJWT, async(req,res)=>{
   try {
     const result = await usersCollection.find({}).toArray();
     const users = result.filter(user=> user.role !== "admin");
@@ -280,10 +278,10 @@ app.get('/allusers', async(req,res)=>{
 
 
 // all sellers data send to the client side
-app.get('/allsellers', async(req,res)=>{
+app.get('/allsellers',verifyJWT, async(req,res)=>{
   try {
     const result = await usersCollection.find({}).toArray();
-    const sellers = result.filter(data=> data.type === 'Seller');
+    const sellers = result.filter(data=> data.type === 'Seller' && data.role !== 'admin');
     res.send({
       success: true,
       data: sellers
@@ -299,7 +297,7 @@ app.get('/allsellers', async(req,res)=>{
 
 
 
-app.post('/allsellers', async(req,res)=>{
+app.post('/allsellers',verifyJWT, async(req,res)=>{
   try {
     const id = req.query.id;
     const query = {_id: ObjectId(id)};
@@ -320,10 +318,10 @@ app.post('/allsellers', async(req,res)=>{
 
 
 // all buyers ger api
-app.get('/allbuyers', async(req,res)=>{
+app.get('/allbuyers',verifyJWT, async(req,res)=>{
   try {
     const result = await usersCollection.find({}).toArray();
-    const buyers = result.filter(data=> data.type === 'buyer' && data.role !== 'admin');
+    const buyers = result.filter(data=> data.type === 'Buyer' && data.role !== 'admin');
     res.send({
       success: true,
       data: buyers
@@ -338,7 +336,7 @@ app.get('/allbuyers', async(req,res)=>{
 });
 
 // get the orders for a user 
-app.get('/myorders', async(req,res)=>{
+app.get('/myorders',verifyJWT, async(req,res)=>{
   try {
     const email = req.query.email;
     const query = {buyer: email};
@@ -357,7 +355,7 @@ app.get('/myorders', async(req,res)=>{
 
 
 
-app.post('/myorders', async(req,res)=>{
+app.post('/myorders',verifyJWT, async(req,res)=>{
   try {
     const id = req.query.id;
     const query = {_id: ObjectId(id)};
@@ -382,7 +380,7 @@ app.post('/myorders', async(req,res)=>{
 
 // my products data loaded through this api
 
-app.get('/myproducts', async(req,res)=>{
+app.get('/myproducts',verifyJWT, async(req,res)=>{
   try {
     const id = req.query.id;
     const query = {seller: id}
@@ -402,7 +400,7 @@ app.get('/myproducts', async(req,res)=>{
 
 // advertise data pushted to the advertise collection
 
-app.patch('/advertise', async(req,res)=>{
+app.patch('/advertise',verifyJWT, async(req,res)=>{
   try {
     const id = req.query.id;
     const query = {_id: ObjectId(id)};
@@ -439,11 +437,29 @@ app.patch('/advertise', async(req,res)=>{
 
 //Delete the product by user
 
-app.post('/advertise', async(req,res)=>{
+app.post('/advertise',verifyJWT, async(req,res)=>{
   try {
     const id = req.query.id;
     const query = {_id: ObjectId(id)};
     const result = await productsCollection.deleteOne(query);
+    res.send({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+
+// get all advertise data from here
+app.get('/advertise',verifyJWT, async(req,res)=>{
+  try {
+    const result = await advertiseCollection.find({}).toArray();
     res.send({
       success: true,
       data: result
@@ -481,10 +497,14 @@ app.post('/addproduct', async(req,res)=>{
 
 // handle order by modal
 
-app.post('/order', async(req,res)=>{
+app.post('/order',verifyJWT, async(req,res)=>{
   try {
     const id = req.query.id;
     const email = req.query.email;
+    const decoded = req.decoded;
+            if(decoded.email !== email){
+                return res.status(403).send({message: 'unauthorized access'})
+            }
     const product = req.body;
     const data = await productsCollection.findOne({_id:ObjectId(id)});
     data.buyer = email;

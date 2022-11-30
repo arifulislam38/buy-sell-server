@@ -33,18 +33,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run() {
   try {
-    await client.connect();
-
-  } catch(error) {
-    console.log(error.name, error.message)
-  }
-}
-run();
-
-
-
-
-const usersCollection = client.db('swaplaptop').collection('users');
+    const usersCollection = client.db('swaplaptop').collection('users');
 const productsCollection = client.db('swaplaptop').collection('products');
 const wishCollection = client.db('swaplaptop').collection('wishlist');
 const reportCollection = client.db('swaplaptop').collection('reportedProduct');
@@ -378,13 +367,37 @@ app.post('/myorders',verifyJWT, async(req,res)=>{
 });
 
 
+// single order by product id
+app.get('/orders/:id', async(req,res)=>{
+  try {
+    const id = req.params.id;
+    const query = {_id: ObjectId(id)};
+
+    const result = await ordersCollection.findOne(query);
+      
+        res.send({
+        success: true,
+        data: result
+      })
+    
+    
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+
 // my products data loaded through this api
 
 app.get('/myproducts',verifyJWT, async(req,res)=>{
   try {
     const id = req.query.id;
-    const query = {seller: id}
-    const result = await productsCollection.find(query).toArray();
+    const query = {};
+    const products = await productsCollection.find(query).toArray();
+    const result = products.filter(product=> product.seller.email === id);
     res.send({
       success: true,
       data: result
@@ -532,7 +545,41 @@ app.post('/order',verifyJWT, async(req,res)=>{
         message: error.message
     })
   }
-})
+});
+/// wish collection for particular
+app.get('/wishlist',verifyJWT,async(req,res)=>{
+  try {
+    const email = req.query.email;
+    const query = {wish: email};
+    const result = await wishCollection.find(query).toArray();
+    res.send({
+      success: true,
+      data: result
+    })
+  } catch (error) {
+    res.send({
+        success: false,
+        message: error.message
+    })
+  }
+});
+
+
+
+
+
+  
+
+  } catch(error) {
+    console.log(error.name, error.message)
+  }
+}
+run();
+
+
+
+
+
 
 
 app.get('/', async (req, res) => {
